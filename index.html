@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF-ChatGPT | Enterprise Document Intelligence</title>
+  <meta name="description" content="Chat with your PDF documents using Retrieval-Augmented Generation." />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+
+  <!-- Markdown rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+  <!-- Syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- ================= Sidebar ================= -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <img src="/static/favicon.svg" alt="" class="brand-icon" />
+          <span class="brand-name">PDF-ChatGPT</span>
+        </div>
+        <button id="theme-toggle" class="icon-btn" title="Toggle dark / light mode" aria-label="Toggle theme">
+          <svg class="icon icon-sun" viewBox="0 0 24 24"><path d="M12 4.5a1 1 0 0 1 1 1V7a1 1 0 1 1-2 0V5.5a1 1 0 0 1 1-1Zm0 13a1 1 0 0 1 1 1V20a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Zm7.5-6.5a1 1 0 0 1-1 1H17a1 1 0 1 1 0-2h1.5a1 1 0 0 1 1 1ZM7 12a1 1 0 0 1-1 1H4.5a1 1 0 1 1 0-2H6a1 1 0 0 1 1 1Zm9.02-5.02a1 1 0 0 1 0 1.42l-1.06 1.06a1 1 0 1 1-1.42-1.42l1.06-1.06a1 1 0 0 1 1.42 0ZM8.46 15.54a1 1 0 0 1 0 1.42l-1.06 1.06a1 1 0 1 1-1.42-1.42l1.06-1.06a1 1 0 0 1 1.42 0Zm7.56 1.42a1 1 0 0 1-1.42 0l-1.06-1.06a1 1 0 1 1 1.42-1.42l1.06 1.06a1 1 0 0 1 0 1.42ZM8.46 8.46a1 1 0 0 1-1.42 0L5.98 7.4A1 1 0 1 1 7.4 5.98l1.06 1.06a1 1 0 0 1 0 1.42ZM12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z"/></svg>
+          <svg class="icon icon-moon" viewBox="0 0 24 24"><path d="M20.742 13.045a8.088 8.088 0 0 1-2.077.271c-4.492 0-8.131-3.639-8.131-8.131 0-.712.093-1.403.267-2.062a.5.5 0 0 0-.642-.61A9.13 9.13 0 1 0 21.353 13.7a.5.5 0 0 0-.61-.655Z"/></svg>
+        </button>
+      </div>
+
+      <button id="new-chat-btn" class="btn btn-primary btn-block">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        New Conversation
+      </button>
+
+      <section class="sidebar-section">
+        <div class="sidebar-section-title">
+          <span>Document Library</span>
+          <label class="upload-btn" title="Upload PDF">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3v12m0-12 4 4m-4-4-4 4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2"/></svg>
+            <input type="file" id="file-input" accept="application/pdf" multiple hidden />
+          </label>
+        </div>
+        <div id="upload-progress" class="upload-progress hidden">
+          <div class="spinner"></div>
+          <span id="upload-progress-text">Indexing document...</span>
+        </div>
+        <ul id="document-list" class="document-list">
+          <li class="empty-state">No documents yet. Upload a PDF to get started.</li>
+        </ul>
+      </section>
+
+      <section class="sidebar-section sidebar-section-grow">
+        <div class="sidebar-section-title"><span>Conversations</span></div>
+        <ul id="conversation-list" class="conversation-list">
+          <li class="empty-state">No conversations yet.</li>
+        </ul>
+      </section>
+
+      <div class="sidebar-footer">
+        <a href="/api/docs" target="_blank" rel="noopener" class="footer-link">API Docs (Swagger)</a>
+        <span id="health-indicator" class="health-indicator" title="Checking status...">●</span>
+      </div>
+    </aside>
+
+    <button id="sidebar-toggle" class="icon-btn sidebar-toggle" aria-label="Toggle sidebar">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+
+    <!-- ================= Main chat panel ================= -->
+    <main class="chat-panel">
+      <header class="chat-header">
+        <div>
+          <h1 id="conversation-title">New Conversation</h1>
+          <p class="chat-subtitle">Ask questions grounded in your uploaded PDF documents.</p>
+        </div>
+        <div class="scope-selector">
+          <label for="document-scope">Search scope</label>
+          <select id="document-scope">
+            <option value="">All documents</option>
+          </select>
+        </div>
+      </header>
+
+      <div id="chat-messages" class="chat-messages">
+        <div class="welcome-card">
+          <h2>Welcome to PDF-ChatGPT</h2>
+          <p>Upload one or more PDF documents, then ask questions in natural language. Answers are generated
+             using Retrieval-Augmented Generation (RAG) and always cite the source document and page.</p>
+          <ol>
+            <li>Upload a PDF using the panel on the left.</li>
+            <li>Wait for indexing to complete (chunking + embeddings + FAISS).</li>
+            <li>Ask a question below — answers stream in real time.</li>
+          </ol>
+        </div>
+      </div>
+
+      <form id="chat-form" class="chat-input-bar">
+        <textarea
+          id="chat-input"
+          rows="1"
+          placeholder="Ask a question about your documents..."
+          aria-label="Chat message"
+        ></textarea>
+        <button type="submit" id="send-btn" class="btn btn-primary send-btn" title="Send">
+          <svg class="icon" viewBox="0 0 24 24"><path d="m3 12 18-8-8 18-2-8-8-2Z"/></svg>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
